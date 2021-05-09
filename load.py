@@ -4,6 +4,7 @@ import logging
 import l10n
 import functools
 import os
+from urllib.parse import urljoin
 
 from typing import Optional, Tuple, Dict, Any
 from config import appname
@@ -33,6 +34,9 @@ body_status: Optional[HyperlinkLabel]
 
 star_system: Optional[str] = None
 body: Optional[str] = None
+
+WIKIPEDIA_URL = 'https://en.wikipedia.org/'
+
 
 def plugin_start3(plugin_dir: str) -> str:
   logger.debug(f'{plugin_name} plugin loaded ({plugin_dir})')
@@ -85,16 +89,10 @@ def journal_entry(
 def update_status() -> None:
   global star_system, body, system_status, body_status
 
-  if star_system is None:
-    system_status['text'] = None
-    system_status['url'] = None
-  else:
+  if star_system is not None:
     system_status['text'] = star_system
-    system_status['url'] = f'https://en.wikipedia.org/{star_system}'
+    system_status['url'] = urljoin(WIKIPEDIA_URL, f'wiki/{star_system}')
 
-  if body is None:
-    body_status['text'] = None
-    body_status['url'] = None
-  else:
+  if body is not None:
     body_status['text'] = body
-    body_status['url'] = f'https://en.wikipedia.org/{body}'
+    body_status['url'] = urljoin(WIKIPEDIA_URL, f'wiki/{body}')
