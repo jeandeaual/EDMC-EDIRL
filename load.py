@@ -70,19 +70,16 @@ def journal_entry(
 ) -> None:
   global star_system, body
 
-  star_system = None
-  body = None
-
   if entry['event'] == 'FSDJump':
     # We arrived at a new system!
     if 'StarSystem' in entry:
       star_system = entry['StarSystem']
   elif entry['event'] == 'SupercruiseExit':
-    # We arrived at a new system!
     if 'StarSystem' in entry:
       star_system = entry['StarSystem']
     if 'Body' in entry:
       body = entry['Body']
+
   update_status()
 
 def update_status() -> None:
