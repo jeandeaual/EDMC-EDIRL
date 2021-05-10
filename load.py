@@ -92,13 +92,13 @@ def update_status() -> None:
   if star_system is not None:
     system_status['text'] = star_system
     system_status['url'] = urljoin(WIKIPEDIA_URL, f'wiki/{star_system}')
-  else
-    system_status['text'] = _('No data found') 
+  else:
+    system_status['text'] = _('No data found')
     system_status['url'] = None
 
   if body is not None:
     body_status['text'] = body
     body_status['url'] = urljoin(WIKIPEDIA_URL, f'wiki/{body}')
-  else
-    system_status['text'] = _('No data found') 
-    system_status['url'] = None
+  else:
+    body_status['text'] = _('No data found')
+    body_status['url'] = None
