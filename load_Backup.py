@@ -4,7 +4,6 @@ import logging
 import l10n
 import functools
 import os
-import requests
 from urllib.parse import urljoin
 
 from typing import Optional, Tuple, Dict, Any
@@ -84,16 +83,6 @@ def journal_entry(
       star_system = entry['StarSystem']
     if 'Body' in entry:
       body = entry['Body']
-	  
-  if entry['event'] == 'Docked':
-    # We arrived at a new system!
-    if 'StarSystem' in entry:
-      star_system = entry['StarSystem']
-  elif entry['event'] == 'Cargo':
-    if 'StarSystem' in entry:
-      star_system = entry['StarSystem']
-    if 'Body' in entry:
-      body = entry['Body']
 
   update_status()
 
@@ -106,11 +95,6 @@ def update_status() -> None:
   else:
     system_status['text'] = _('No data found')
     system_status['url'] = None
-
-
-
-
-
 
   if body is not None:
     body_status['text'] = body
