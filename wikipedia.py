@@ -17,12 +17,11 @@ def query_wikipedia_page(name: str) -> Optional[str]:
     if response.history:
         logging.debug("request was redirected")
         last_response = response.history[-1]
-        logging.debug(f'got redirected to {last_response.url} with response code {last_responsetus_code}')
+        logging.debug(
+            f'got redirected to {last_response.url} with response code {last_response.status_code}'
+        )
         # TODO: Check if we got redirected to index.php
         return None
     else:
         logging.debug("request was not redirected")
         return url
-
-
-query_wikipedia_page('Test')
