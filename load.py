@@ -4,10 +4,11 @@ import logging
 import l10n
 import functools
 import os
-from urllib.parse import urljoin
 
-from typing import Optional, Tuple, Dict, Any
+from typing import Optional, Dict, Any
 from config import appname
+
+from wikipedia import query_wikipedia_page
 
 plugin_name = os.path.basename(os.path.dirname(__file__))
 logger = logging.getLogger(f'{appname}.{plugin_name}')
@@ -19,7 +20,7 @@ if not logger.hasHandlers():
 
     logger.setLevel(level)
     logger_channel = logging.StreamHandler()
-    logger_formatter = logging.Formatter(f'%(asctime)s - %(name)s - %(levelname)s - %(module)s:%(lineno)d:%(funcName)s: %(message)s')
+    logger_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(module)s:%(lineno)d:%(funcName)s: %(message)s')
     logger_formatter.default_time_format = '%Y-%m-%d %H:%M:%S'
     logger_formatter.default_msec_format = '%s.%03d'
     logger_channel.setFormatter(logger_formatter)
@@ -35,70 +36,99 @@ body_status: Optional[HyperlinkLabel]
 star_system: Optional[str] = None
 body: Optional[str] = None
 
-WIKIPEDIA_URL = 'https://en.wikipedia.org/'
-
 
 def plugin_start3(plugin_dir: str) -> str:
-  logger.debug(f'{plugin_name} plugin loaded ({plugin_dir})')
-  return plugin_name
+    logger.debug(f'{plugin_name} plugin loaded ({plugin_dir})')
+    return plugin_name
+
 
 def plugin_stop() -> None:
-  pass
+    pass
+
 
 def prefs_changed(cmdr: str, is_beta: bool) -> None:
-  update_status()
+    update_status()
 
-def plugin_app(parent) -> Tuple[tk.Label,tk.Label]:
-  global system_label, system_status, body_label, body_status
 
-  frame = tk.Frame(parent)
+def plugin_app(parent) -> tk.Frame:
+    global system_label, system_status, body_label, body_status
 
-  system_label = tk.Label(frame, text=f'{_("System")}:')
-  system_label.grid(row=0, column=0, sticky=tk.W)
-  system_status = HyperlinkLabel(frame, text='')
-  system_status.grid(row=0, column=2, sticky=tk.E)
+    frame = tk.Frame(parent)
 
-  body_label = tk.Label(frame, text=f'{_("Body")}:')
-  body_label.grid(row=1, column=0, sticky=tk.W)
-  body_status = HyperlinkLabel(frame, text='')
-  body_status.grid(row=1, column=2, sticky=tk.E)
+    system_label = tk.Label(frame, text=f'{_("System")}:')
+    system_label.grid(row=0, column=0, sticky=tk.W)
+    system_status = HyperlinkLabel(frame, text='', url=None)
+    system_status.grid(row=0, column=2, sticky=tk.E)
 
-  frame.columnconfigure(2, weight=1)
+    body_label = tk.Label(frame, text=f'{_("Body")}:')
+    body_label.grid(row=1, column=0, sticky=tk.W)
+    body_status = HyperlinkLabel(frame, text='', url=None)
+    body_status.grid(row=1, column=2, sticky=tk.E)
 
-  update_status()
+    frame.columnconfigure(2, weight=1)
 
-  return frame
+    update_status()
+
+    return frame
+
 
 def journal_entry(
     cmdr: str, is_beta: bool, system: str, station: str, entry: Dict[str, Any], state: Dict[str, Any]
 ) -> None:
-  global star_system, body
+    global star_system, body
 
-  if entry['event'] == 'FSDJump':
-    # We arrived at a new system!
-    if 'StarSystem' in entry:
-      star_system = entry['StarSystem']
-  elif entry['event'] == 'SupercruiseExit':
-    if 'StarSystem' in entry:
-      star_system = entry['StarSystem']
-    if 'Body' in entry:
-      body = entry['Body']
+    if entry['event'] == 'FSDJump':
+        # We arrived at a new system!
+        if 'StarSystem' in entry:
+            star_system = entry['StarSystem']
+    elif entry['event'] == 'SupercruiseExit':
+        if 'StarSystem' in entry:
+            star_system = entry['StarSystem']
+        if 'Body' in entry:
+            body = entry['Body']
+        else:
+            body = None
+    elif entry['event'] == 'Docked':
+        if 'StarSystem' in entry:
+            star_system = entry['StarSystem']
+        if 'Body' in entry:
+            body = entry['Body']
+        else:
+            body = None
+    elif entry['event'] == 'Cargo':
+        if 'StarSystem' in entry:
+            star_system = entry['StarSystem']
+        if 'Body' in entry:
+            body = entry['Body']
+        else:
+            body = None
 
-  update_status()
+    update_status()
+
 
 def update_status() -> None:
-  global star_system, body, system_status, body_status
+    global star_system, body, system_status, body_status
 
-  if star_system is not None:
-    system_status['text'] = star_system
-    system_status['url'] = urljoin(WIKIPEDIA_URL, f'wiki/{star_system}')
-  else:
-    system_status['text'] = _('No data found')
-    system_status['url'] = None
+    if star_system is not None:
+        url = query_wikipedia_page(star_system)
+        if url is not None:
+            system_status['text'] = star_system
+            system_status['url'] = url
+        else:
+            system_status['text'] = _('No data found')
+            system_status['url'] = None
+    else:
+        system_status['text'] = _('No data found')
+        system_status['url'] = None
 
-  if body is not None:
-    body_status['text'] = body
-    body_status['url'] = urljoin(WIKIPEDIA_URL, f'wiki/{body}')
-  else:
-    body_status['text'] = _('No data found')
-    body_status['url'] = None
+    if body is not None:
+        url = query_wikipedia_page(body)
+        if url is not None:
+            body_status['text'] = body
+            body_status['url'] = url
+        else:
+            body_status['text'] = _('No data found')
+            body_status['url'] = None
+    else:
+        body_status['text'] = _('No data found')
+        body_status['url'] = None
